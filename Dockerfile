@@ -7,4 +7,4 @@ RUN pip3 install --no-cache-dir --upgrade -r /code/requirements.txt
 
 COPY . /code
 
-CMD scrapyrt -p $PORT
+CMD exec scrapyrt -i 0.0.0.0 -p $PORT
