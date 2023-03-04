@@ -56,6 +56,7 @@ class BookLoader(ItemLoader):
 
 class BookItem(scrapy.Item):
     # High Level Info
+    book_id = Field(serializer=int)
     book_url = Field()
     title = Field(input_processor=MapCompose(str.strip))
     author = Field(input_processor=MapCompose(str.strip))

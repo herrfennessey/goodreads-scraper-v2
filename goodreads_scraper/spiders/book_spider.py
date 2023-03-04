@@ -55,6 +55,7 @@ class BookSpider(scrapy.Spider):
             return Request(converted_url, callback=self.parse, dont_filter=True)
 
         # High Level Info
+        loader.add_value('book_id', book.get("legacyId"))
         loader.add_value('book_url', book_url)
         loader.add_value('title', book.get("title"))
         loader.add_value('author', contributor.get("name"))
