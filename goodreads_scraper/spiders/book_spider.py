@@ -16,14 +16,17 @@ TYPENAME = "__typename"
 class BookSpider(scrapy.Spider):
     """Extract information from a /book/show type page on Goodreads"""
     name = "book"
+    custom_settings = {'ITEM_PIPELINES': {'goodreads_scraper.pipelines.PubsubPipeline': 400}}
 
-    def __init__(self, books="/book/show/41745268-gone-hunting"):
-        super().__init__()
-        self.start_urls = books.split(",")
+    def __init__(self, books: List[str], project_id: str, topic_name: str, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.custom_settings['GCP_PROJECT_ID'] = project_id
+        self.custom_settings['PUBSUB_TOPIC_NAME'] = topic_name
+        self.start_urls = books
 
     def start_requests(self):
-        for url in self.start_urls:
-            converted_url = self._format_book_url(url)
+        for book_id in self.start_urls:
+            converted_url = self._generate_book_url(book_id)
             yield Request(converted_url, callback=self.parse, dont_filter=True)
 
     def parse(self, response):
@@ -42,6 +45,11 @@ class BookSpider(scrapy.Spider):
         series = self._take_first_element(book_info, "Series")
         work = self._take_largest_element(book_info, "Work")
         book = self._take_largest_element(book_info, "Book")
+
+        if not book:
+            self.logger.warning("Unable to load book, skipping!")
+            return
+
         book_details = book.get("details")
 
         backup_isbns = self._extract_isbn_from_affiliates(
@@ -51,7 +59,7 @@ class BookSpider(scrapy.Spider):
 
         if not book:
             self.logger.warning("Unable to load body, reloading page!")
-            converted_url = self._format_book_url(book_url)
+            converted_url = self._generate_book_url(book_url)
             return Request(converted_url, callback=self.parse, dont_filter=True)
 
         # High Level Info
@@ -128,8 +136,8 @@ class BookSpider(scrapy.Spider):
         return counter
 
     @staticmethod
-    def _format_book_url(user_id_and_name):
-        return f"https://www.goodreads.com{user_id_and_name}"
+    def _generate_book_url(book_id):
+        return f"https://www.goodreads.com/book/show/{book_id}"
 
     @staticmethod
     def _extract_isbn_from_affiliates(affiliates: List[Dict]) -> Dict[str, str]:
