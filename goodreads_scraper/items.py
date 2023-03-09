@@ -28,12 +28,6 @@ def convert_epoch_to_timestamp(epoch):
     time_object = datetime.fromtimestamp(epoch_seconds)
     return time_object.date().isoformat()
 
-
-def convert_ordered_list_to_ratings_dict(rating_list):
-    rating_dict = {idx + 1: rating for idx, rating in enumerate(rating_list)}
-    return json.dumps(rating_dict)
-
-
 def filter_asin(asin):
     if asin and len(str(asin)) == 10:
         return asin
@@ -58,10 +52,11 @@ class BookItem(scrapy.Item):
     # High Level Info
     book_id = Field(serializer=int)
     book_url = Field()
-    title = Field(input_processor=MapCompose(str.strip))
+    book_title = Field(input_processor=MapCompose(str.strip))
     author = Field(input_processor=MapCompose(str.strip))
     author_url = Field(input_processor=MapCompose(str.strip))
     book_description = Field()
+    scrape_time = Field(serializer=datetime)
 
     # Work Details
     work_internal_id = Field()
@@ -73,7 +68,7 @@ class BookItem(scrapy.Item):
     num_ratings = Field()
     num_reviews = Field()
     avg_rating = Field()
-    rating_histogram = Field(input_processor=convert_ordered_list_to_ratings_dict)
+    rating_histogram = Field(output_processor=Compose(list))
 
     # Book Statistics
     num_pages = Field()
@@ -83,6 +78,7 @@ class BookItem(scrapy.Item):
     asin = Field(input_processor=MapCompose(filter_asin))
     series = Field(input_processor=MapCompose(str.strip))
     genres = Field(output_processor=Compose(set, list))
+
 
 
 class UserReviewItem(scrapy.Item):

@@ -1,6 +1,7 @@
 """Spider to extract information from a /book/show type page on Goodreads"""
 import json
 import re
+import time
 from typing import Dict, List
 from urllib.parse import urlsplit
 
@@ -60,10 +61,11 @@ class BookSpider(scrapy.Spider):
         # High Level Info
         loader.add_value('book_id', book.get("legacyId"))
         loader.add_value('book_url', book_url)
-        loader.add_value('title', book.get("title"))
+        loader.add_value('book_title', book.get("title"))
         loader.add_value('author', contributor.get("name"))
         loader.add_value('author_url', contributor.get("webUrl"))
         loader.add_value('book_description', book.get('description({"stripped":true})'))
+        loader.add_value('scrape_time', round(time.time() * 1000))
 
         # Work Details
         loader.add_value('work_internal_id', work.get("id"))
