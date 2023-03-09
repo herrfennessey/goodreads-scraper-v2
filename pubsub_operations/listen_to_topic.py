@@ -18,7 +18,7 @@ subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
 
 def callback(message: pubsub_v1.subscriber.message.Message) -> None:
-    print(f"Received {message}.")
+    print(f"Received {message}. The body was {message.data}")
     message.ack()
 
 

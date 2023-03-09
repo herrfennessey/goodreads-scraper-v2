@@ -57,11 +57,6 @@ class BookSpider(scrapy.Spider):
 
         book_url = urlsplit(response.request.url).path
 
-        if not book:
-            self.logger.warning("Unable to load body, reloading page!")
-            converted_url = self._generate_book_url(book_url)
-            return Request(converted_url, callback=self.parse, dont_filter=True)
-
         # High Level Info
         loader.add_value('book_id', book.get("legacyId"))
         loader.add_value('book_url', book_url)
