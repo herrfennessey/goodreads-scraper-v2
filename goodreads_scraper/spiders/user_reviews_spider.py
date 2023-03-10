@@ -16,14 +16,16 @@ ITEMS_PER_PAGE = 30
 
 class UserReviewsSpider(scrapy.Spider):
     name = "user_reviews"
+    custom_settings = {'ITEM_PIPELINES': {'goodreads_scraper.pipelines.PubsubPipeline': 400}}
 
-    def __init__(self, profiles):
-        super().__init__()
-        self.start_urls = profiles.split(",")
+    def __init__(self, profiles, project_id="test-project", topic_name="test-topic", *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.custom_settings['GCP_PROJECT_ID'] = project_id
+        self.custom_settings['PUBSUB_TOPIC_NAME'] = topic_name
+        self.start_urls = profiles
 
     def start_requests(self):
-        for url in self.start_urls:
-            user_id = self.extract_username_from_url(url)
+        for user_id in self.start_urls:
             converted_url = self.format_review_url(user_id, 1)
             yield Request(converted_url, callback=self.parse, dont_filter=True, meta={"user_id": user_id, "page": 1})
 
@@ -62,7 +64,7 @@ class UserReviewsSpider(scrapy.Spider):
     @staticmethod
     def build_review(review_block, user_id, user_rating):
         loader = UserReviewLoader(UserReviewItem(), review_block)
-        loader.add_value('user_id', user_id.split('-')[0])
+        loader.add_value('user_id', user_id)
 
         loader.add_xpath('book_id', 'td[@class="field cover"]//div//div/@data-resource-id')
         loader.add_xpath('book_url', 'td[@class="field title"]//a/@href')

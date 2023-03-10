@@ -2,7 +2,12 @@ version: "3.9"
 services:
   web:
     build: .
-    environment:
-      PORT: 8080
     ports:
-      - "8080:8080"
+      - "9080:9080"
+    command: "scrapyrt -i 0.0.0.0 -p 9080"
+
+  pubsub:
+    image: "gcr.io/google.com/cloudsdktool/google-cloud-cli:latest"
+    command: "gcloud beta emulators pubsub start --project=test-project --host-port=0.0.0.0:8681"
+    ports:
+      - "8681:8681"
