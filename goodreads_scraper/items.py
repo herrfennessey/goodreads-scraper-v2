@@ -23,10 +23,15 @@ def safe_parse_date(date):
     return date
 
 
-def convert_epoch_to_timestamp(epoch):
+def convert_epoch_to_date(epoch):
     epoch_seconds = epoch / 1000
     time_object = datetime.fromtimestamp(epoch_seconds)
     return time_object.date().isoformat()
+
+def convert_epoch_to_timestamp(epoch):
+    epoch_seconds = epoch / 1000
+    time_object = datetime.fromtimestamp(epoch_seconds)
+    return time_object.isoformat()
 
 def filter_asin(asin):
     if asin and len(str(asin)) == 10:
@@ -56,12 +61,12 @@ class BookItem(scrapy.Item):
     author = Field(input_processor=MapCompose(str.strip))
     author_url = Field(input_processor=MapCompose(str.strip))
     book_description = Field()
-    scrape_time = Field(serializer=datetime)
+    scrape_time = Field(input_processor=MapCompose(convert_epoch_to_timestamp))
 
     # Work Details
     work_internal_id = Field()
     work_id = Field(serializer=int)
-    publish_date = Field(input_processor=MapCompose(convert_epoch_to_timestamp))
+    publish_date = Field(input_processor=MapCompose(convert_epoch_to_date))
     original_title = Field(input_processor=MapCompose(str.strip))
 
     # Work Statistics
