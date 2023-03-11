@@ -18,11 +18,17 @@ class UserReviewsSpider(scrapy.Spider):
     name = "user_reviews"
     custom_settings = {'ITEM_PIPELINES': {'goodreads_scraper.pipelines.PubsubPipeline': 400}}
 
-    def __init__(self, profiles, project_id="test-project", topic_name="test-topic", *args, **kwargs):
+    def __init__(self, profiles, project_id=None, topic_name=None, *args, **kwargs):
+        """
+        :param profiles: comma delimited list of goodreads profile IDs
+        :param project_id: (Optional) GCP project ID
+        :param topic_name: (Optional) GCP Pub/Sub topic name
+        """
         super().__init__(*args, **kwargs)
-        self.custom_settings['GCP_PROJECT_ID'] = project_id
-        self.custom_settings['PUBSUB_TOPIC_NAME'] = topic_name
-        self.start_urls = profiles
+        if project_id and topic_name:
+            self.custom_settings["GCP_PROJECT_ID"] = project_id
+            self.custom_settings["PUBSUB_TOPIC_NAME"] = topic_name
+        self.start_urls = profiles.split(",")
 
     def start_requests(self):
         for user_id in self.start_urls:

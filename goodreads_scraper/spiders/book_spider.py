@@ -26,11 +26,9 @@ class BookSpider(scrapy.Spider):
         :param topic_name: (Optional) GCP Pub/Sub topic name
         """
         super().__init__(*args, **kwargs)
-        # If the topic and project ID are filled out, then send to pubsub - else, just return to the API
         if project_id and topic_name:
-            self.custom_settings = {"GCP_PROJECT_ID": project_id, "PUBSUB_TOPIC_NAME": topic_name}
-        else:
-            self.custom_settings = {"ITEM_PIPELINES": None}
+            self.custom_settings["GCP_PROJECT_ID"] = project_id
+            self.custom_settings["PUBSUB_TOPIC_NAME"] = topic_name
         self.start_urls = books.split(',')
 
     def start_requests(self):
@@ -67,7 +65,7 @@ class BookSpider(scrapy.Spider):
 
         # High Level Info
         loader.add_value('book_id', book.get("legacyId"))
-        loader.add_value('book_url', book_url)
+        loader.add_value('book_url', book.get("webUrl"))
         loader.add_value('book_title', book.get("title"))
         loader.add_value('author', contributor.get("name"))
         loader.add_value('author_url', contributor.get("webUrl"))
