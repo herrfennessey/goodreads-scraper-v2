@@ -17,13 +17,20 @@ TYPENAME = "__typename"
 class BookSpider(scrapy.Spider):
     """Extract information from a /book/show type page on Goodreads"""
     name = "book"
-    custom_settings = {'ITEM_PIPELINES': {'goodreads_scraper.pipelines.PubsubPipeline': 400}}
 
-    def __init__(self, books: List[str], project_id: str, topic_name: str, *args, **kwargs):
+    def __init__(self, books: str, project_id: str = None, topic_name: str = None, *args, **kwargs):
+        """
+        :param books: comma delimited list of goodreads book IDs
+        :param project_id: (Optional) GCP project ID
+        :param topic_name: (Optional) GCP Pub/Sub topic name
+        """
         super().__init__(*args, **kwargs)
-        self.custom_settings['GCP_PROJECT_ID'] = project_id
-        self.custom_settings['PUBSUB_TOPIC_NAME'] = topic_name
-        self.start_urls = books
+        # If the topic and project ID are filled out, then send to pubsub - else, just return to the API
+        if project_id and topic_name:
+            self.custom_settings = {'ITEM_PIPELINES': {'goodreads_scraper.pipelines.PubsubPipeline': 400},
+                                    "GCP_PROJECT_ID": project_id,
+                                    "PUBSUB_TOPIC_NAME": topic_name}
+        self.start_urls = books.split(',')
 
     def start_requests(self):
         for book_id in self.start_urls:
