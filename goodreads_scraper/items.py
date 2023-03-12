@@ -2,8 +2,6 @@
 #
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/items.html
-import json
-import re
 from datetime import datetime
 
 import isbnlib
@@ -28,10 +26,12 @@ def convert_epoch_to_date(epoch):
     time_object = datetime.fromtimestamp(epoch_seconds)
     return time_object.date().isoformat()
 
+
 def convert_epoch_to_timestamp(epoch):
     epoch_seconds = epoch / 1000
     time_object = datetime.fromtimestamp(epoch_seconds)
     return time_object.isoformat()
+
 
 def filter_asin(asin):
     if asin and len(str(asin)) == 10:
@@ -85,19 +85,12 @@ class BookItem(scrapy.Item):
     genres = Field(output_processor=Compose(set, list))
 
 
-
 class UserReviewItem(scrapy.Item):
     user_id = Field()
-    work_id = Field()
-
     book_id = Field()
-    book_url = Field()
-    book_name = Field()
-
-    date_read = Field(input_processor=MapCompose(safe_parse_date))
-    date_added = Field(input_processor=MapCompose(safe_parse_date))
-
     user_rating = Field(serializer=int)
+    date_read = Field(input_processor=MapCompose(safe_parse_date))
+    scrape_time = Field(input_processor=MapCompose(convert_epoch_to_timestamp))
 
 
 class UserReviewLoader(ItemLoader):

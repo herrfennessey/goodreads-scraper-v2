@@ -1,6 +1,7 @@
 """Spider to extract information from a /author/show page"""
 import logging
 import re
+import time
 
 import scrapy
 from scrapy import Request
@@ -73,11 +74,16 @@ class UserReviewsSpider(scrapy.Spider):
         loader.add_value('user_id', user_id)
 
         loader.add_xpath('book_id', 'td[@class="field cover"]//div//div/@data-resource-id')
-        loader.add_xpath('book_url', 'td[@class="field title"]//a/@href')
-        loader.add_xpath('book_name', 'td[@class="field title"]//a/@title')
+        date_read = review_block.xpath('td[@class="field date_read"]//div[@class="value"]//div//div//span/text()').get()
 
-        loader.add_xpath('date_read', 'td[@class="field date_read"]//div[@class="value"]//div//div//span/text()')
-        loader.add_xpath('date_added', 'td[@class="field date_added"]//div[@class="value"]//span/@title')
+        # Goodreads does this weird thing where if you haven't read a book yet, it will show the date you added it to
+        # your shelf instead of the date you read it
+        if date_read == "not set":
+            loader.add_xpath('date_read', 'td[@class="field date_added"]//div[@class="value"]//span/@title')
+        else:
+            loader.add_value('date_read', date_read)
+
+        loader.add_value('scrape_time', round(time.time() * 1000))
 
         loader.add_value('user_rating', user_rating)
         return loader.load_item()

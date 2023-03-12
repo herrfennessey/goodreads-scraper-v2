@@ -61,8 +61,6 @@ class BookSpider(scrapy.Spider):
         backup_isbns = self._extract_isbn_from_affiliates(
             book.get("links({})", {}).get("secondaryAffiliateLinks", list()))
 
-        book_url = urlsplit(response.request.url).path
-
         # High Level Info
         loader.add_value('book_id', book.get("legacyId"))
         loader.add_value('book_url', book.get("webUrl"))
