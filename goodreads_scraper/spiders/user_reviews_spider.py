@@ -74,9 +74,6 @@ class UserReviewsSpider(scrapy.Spider):
         loader.add_value('user_id', user_id)
 
         loader.add_xpath('book_id', 'td[@class="field cover"]//div//div/@data-resource-id')
-        # Technically this shouldn't be necessary, but it sure makes it easier to debug the database
-        loader.add_xpath('book_name', 'td[@class="field title"]//a/@title')
-
         date_read = review_block.xpath('td[@class="field date_read"]//div[@class="value"]//div//div//span/text()').get()
 
         # Goodreads does this weird thing where if you haven't read a book yet, it will show the date you added it to

@@ -88,7 +88,6 @@ class BookItem(scrapy.Item):
 class UserReviewItem(scrapy.Item):
     user_id = Field()
     book_id = Field()
-    book_name = Field()
     user_rating = Field(serializer=int)
     date_read = Field(input_processor=MapCompose(safe_parse_date))
     scrape_time = Field(input_processor=MapCompose(convert_epoch_to_timestamp))
