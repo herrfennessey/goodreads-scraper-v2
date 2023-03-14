@@ -95,3 +95,7 @@ class UserReviewItem(scrapy.Item):
 
 class UserReviewLoader(ItemLoader):
     default_output_processor = TakeFirst()
+
+
+class UserProfileItem(scrapy.Item):
+    profile_url = Field()
