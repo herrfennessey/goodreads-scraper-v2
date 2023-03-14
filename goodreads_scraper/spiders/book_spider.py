@@ -3,7 +3,6 @@ import json
 import re
 import time
 from typing import Dict, List
-from urllib.parse import urlsplit
 
 import isbnlib
 import scrapy
@@ -34,7 +33,8 @@ class BookSpider(scrapy.Spider):
     def start_requests(self):
         for book_id in self.start_urls:
             converted_url = self._generate_book_url(book_id)
-            yield Request(converted_url, callback=self.parse, dont_filter=True)
+            yield Request(converted_url, callback=self.parse, dont_filter=True,
+                          meta={"retry_count": 0, "book_id": book_id})
 
     def parse(self, response):
         return self.parse_book(response)
@@ -53,8 +53,15 @@ class BookSpider(scrapy.Spider):
         book = self._take_largest_element(book_info, "Book")
 
         if not book:
-            self.logger.warning("Unable to load book, skipping!")
-            return
+            retry_count = response.meta.get("retry_count", 0)
+            book_id = response.meta.get("book_id")
+            if retry_count < 10:
+                converted_url = self._generate_book_url(book_id)
+                return Request(converted_url, callback=self.parse, dont_filter=True,
+                               meta={"retry_count": retry_count + 1, "book_id": book_id})
+            else:
+                self.logger.warning("We've tried 10 times... let's call it a day")
+                return
 
         book_details = book.get("details")
 
