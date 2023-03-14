@@ -80,8 +80,13 @@ class BookSpider(scrapy.Spider):
         # Work Details
         loader.add_value('work_internal_id', work.get("id"))
         loader.add_value('work_id', work.get("legacyId"))
-        loader.add_value('publish_date', work.get("details").get("publicationTime"))
         loader.add_value('original_title', work.get("details").get("originalTitle"))
+
+        # Prioritize main work publication date over edition publication date
+        work_publication_date = work.get("details").get("publicationTime")
+        publication_time = work_publication_date if work_publication_date else book.get("details").get("publicationTime")
+        loader.add_value('publish_date', publication_time)
+
 
         # Work Statistics
         loader.add_value('num_ratings', work.get("stats").get("ratingsCount"))
