@@ -98,4 +98,4 @@ class UserReviewLoader(ItemLoader):
 
 
 class UserProfileItem(scrapy.Item):
-    profile_url = Field()
+    user_id = Field()

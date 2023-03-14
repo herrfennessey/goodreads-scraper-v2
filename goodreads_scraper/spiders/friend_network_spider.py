@@ -11,6 +11,7 @@ from goodreads_scraper.items import UserProfileItem
 logger = logging.getLogger(__name__)
 
 BOOKS_READ_REGEX = re.compile(r".*\b(\d+)\sbooks")
+PROFILE_ID_REGEX = re.compile(r".*goodreads.com\/user\/show\/([0-9]*).*")
 BOOKS_FOLLOW_THRESHOLD = 50
 GOODREADS_URL_PREFIX = "https://www.goodreads.com"
 
@@ -64,4 +65,7 @@ class FriendNetworkSpider(scrapy.Spider):
 
     @staticmethod
     def parse_user_profile(url):
-        return UserProfileItem({"profile_url": url})
+        regex_results = re.findall(PROFILE_ID_REGEX, url)
+        if len(regex_results) > 0:
+            return UserProfileItem({"user_id": regex_results[0]})
+
