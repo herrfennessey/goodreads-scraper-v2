@@ -18,7 +18,7 @@ GOODREADS_URL_PREFIX = "https://www.goodreads.com"
 
 class FriendNetworkSpider(scrapy.Spider):
     name = "friend_network"
-    custom_settings = {'CLOSESPIDER_ITEMCOUNT': 100_000,
+    custom_settings = {'CLOSESPIDER_ITEMCOUNT': 50,
                        'ITEM_PIPELINES': {'goodreads_scraper.pipelines.PubsubPipeline': 400}}
 
     def __init__(self, start_profile_id: str, project_id: str = None, topic_name: str = None, *args, **kwargs):
