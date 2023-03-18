@@ -2,9 +2,10 @@
 import json
 import logging
 from concurrent import futures
-from typing import Callable
+from typing import Callable, Dict, List, Any
 
 from google.cloud import pubsub_v1
+from pydantic import BaseModel
 from scrapy import signals
 
 # Define your item pipelines here
@@ -12,7 +13,13 @@ from scrapy import signals
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
+MAX_ITEM_COUNT = 100
+
 logger = logging.getLogger(__name__)
+
+
+class BatchRequest(BaseModel):
+    items: List[Dict[str, Any]]
 
 
 class PubsubPipeline(object):
@@ -23,6 +30,7 @@ class PubsubPipeline(object):
     def __init__(self, crawler):
         self.publisher = None
         self.topic_path = None
+        self.items: List[Dict[str, Any]] = []
         crawler.signals.connect(self.spider_opened, signal=signals.spider_opened)
 
     def spider_opened(self, spider):
@@ -43,15 +51,27 @@ class PubsubPipeline(object):
             logging.info("Skipping pub/sub pipeline")
             return item
 
-        publish_futures = []
+        self.items.append(item)
 
-        data = str(json.dumps(dict(item)))
+        if len(self.items) >= MAX_ITEM_COUNT:
+            self.send_batch(self.items)
+            self.items = []
+
+        return item
+
+    def close_spider(self, spider):
+        if len(self.items) > 0:
+            self.send_batch(self.items)
+
+    def send_batch(self, items: List[Dict[str, Any]]):
+        publish_futures = []
+        batch_request = BatchRequest(items=items)
+        data = str(json.dumps(batch_request.dict()))
         publish_future = self.publisher.publish(self.topic_path, data=data.encode("utf-8"))
         publish_future.add_done_callback(self.get_callback(publish_future, data))
         publish_futures.append(publish_future)
-
         futures.wait(publish_futures, return_when=futures.ALL_COMPLETED)
-        return item
+        logging.info("Sent {} items to PubSub".format(len(items)))
 
     @staticmethod
     def get_callback(

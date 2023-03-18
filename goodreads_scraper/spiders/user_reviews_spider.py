@@ -13,6 +13,7 @@ USER_ID_NAME_EXTRACTOR = re.compile(".*/user/show/(.*$)")
 USER_ID_EXTRACTOR = re.compile(".*review/list/(.*)\?")
 # For whatever reason, goodreads refuses to give scrapy more than 30 results per page to scrapers
 ITEMS_PER_PAGE = 30
+MAX_PAGE_COUNT = 20
 
 
 class UserReviewsSpider(scrapy.Spider):
@@ -53,9 +54,13 @@ class UserReviewsSpider(scrapy.Spider):
 
         if reviews_yielded == ITEMS_PER_PAGE:
             new_page_count = response.meta.get("page") + 1
-            formatted_url = self.format_review_url(user_id, new_page_count)
-            yield Request(formatted_url, callback=self.parse, dont_filter=True,
-                          meta={"user_id": user_id, "page": new_page_count})
+            if new_page_count > MAX_PAGE_COUNT:
+                logger.warning(f"Reached max page count for user {user_id}")
+                return
+            else:
+                formatted_url = self.format_review_url(user_id, new_page_count)
+                yield Request(formatted_url, callback=self.parse, dont_filter=True,
+                              meta={"user_id": user_id, "page": new_page_count})
 
     @staticmethod
     def convert_goodreads_ratings_to_star_count(goodreads_rating):
