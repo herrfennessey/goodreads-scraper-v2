@@ -84,9 +84,14 @@ class BookSpider(scrapy.Spider):
 
         # Prioritize main work publication date over edition publication date
         work_publication_date = work.get("details").get("publicationTime")
-        publication_time = work_publication_date if work_publication_date else book.get("details").get("publicationTime")
-        loader.add_value('publish_date', publication_time)
+        publication_time = work_publication_date if work_publication_date else book.get("details").get(
+            "publicationTime")
+        if not publication_time:
+            publication_time = 1610696566000
+        elif publication_time < -62003553200000:
+            publication_time = -62003553200000
 
+        loader.add_value('publish_date', publication_time)
 
         # Work Statistics
         loader.add_value('num_ratings', work.get("stats").get("ratingsCount"))
