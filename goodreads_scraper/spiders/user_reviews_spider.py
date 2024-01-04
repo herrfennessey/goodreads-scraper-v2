@@ -11,9 +11,8 @@ from ..items import UserReviewLoader, UserReviewItem
 logger = logging.getLogger(__name__)
 USER_ID_NAME_EXTRACTOR = re.compile(".*/user/show/(.*$)")
 USER_ID_EXTRACTOR = re.compile(".*review/list/(.*)\?")
-# For whatever reason, goodreads refuses to give scrapy more than 30 results per page to scrapers
-ITEMS_PER_PAGE = 30
-MAX_PAGE_COUNT = 20
+ITEMS_PER_PAGE = 200
+MAX_PAGE_COUNT = 60
 
 
 class UserReviewsSpider(scrapy.Spider):
@@ -38,19 +37,23 @@ class UserReviewsSpider(scrapy.Spider):
             yield Request(converted_url, callback=self.parse, dont_filter=True, meta={"user_id": user_id, "page": 1})
 
     def parse(self, response):
-        user_id = response.meta.get("user_id")
-        review_blocks = response.xpath('//tr[@class="bookalike review"]')
-
         reviews_yielded = 0
-        # When you scrape goodreads for whatever reason they put on infinite scroll, which causes them to return
-        # unpredictable numbers of reviews, and might cause problems when you paginate
-        for review_block in review_blocks[:ITEMS_PER_PAGE]:
-            goodreads_rating = review_block.xpath(
-                'td[@class="field rating"]//div[@class="value"]//span[@class=" staticStars notranslate"]/@title').get()
-            user_rating = self.convert_goodreads_ratings_to_star_count(goodreads_rating)
-            if goodreads_rating and user_rating > 0:
-                reviews_yielded += 1
-                yield self.build_review(review_block, user_id, user_rating)
+        user_id = response.meta.get("user_id")
+        for post in response.xpath('//channel/item'):
+            loader = UserReviewLoader(UserReviewItem(), post)
+            loader.add_value('user_id', user_id)
+            loader.add_xpath('book_id', 'book_id/text()')
+            loader.add_value('scrape_time', round(time.time() * 1000))
+            loader.add_xpath('user_rating', 'user_rating/text()')
+
+            user_read_at = post.xpath('user_read_at/text()').get()
+            if user_read_at:
+                loader.add_value('date_read', user_read_at)
+            else:
+                loader.add_xpath('date_read', 'user_date_added/text()')
+
+            reviews_yielded += 1
+            yield loader.load_item()
 
         if reviews_yielded == ITEMS_PER_PAGE:
             new_page_count = response.meta.get("page") + 1
@@ -62,42 +65,7 @@ class UserReviewsSpider(scrapy.Spider):
                 yield Request(formatted_url, callback=self.parse, dont_filter=True,
                               meta={"user_id": user_id, "page": new_page_count})
 
-    @staticmethod
-    def convert_goodreads_ratings_to_star_count(goodreads_rating):
-        ratings_dict = {
-            "it was amazing": 5,
-            "really liked it": 4,
-            "liked it": 3,
-            "it was ok": 2,
-            "did not like it": 1,
-        }
-        return ratings_dict.get(goodreads_rating)
-
-    @staticmethod
-    def build_review(review_block, user_id, user_rating):
-        loader = UserReviewLoader(UserReviewItem(), review_block)
-        loader.add_value('user_id', user_id)
-
-        loader.add_xpath('book_id', 'td[@class="field cover"]//div//div/@data-resource-id')
-        date_read = review_block.xpath('td[@class="field date_read"]//div[@class="value"]//div//div//span/text()').get()
-
-        # Goodreads does this weird thing where if you haven't read a book yet, it will show the date you added it to
-        # your shelf instead of the date you read it
-        if date_read == "not set":
-            loader.add_xpath('date_read', 'td[@class="field date_added"]//div[@class="value"]//span/@title')
-        else:
-            loader.add_value('date_read', date_read)
-
-        loader.add_value('scrape_time', round(time.time() * 1000))
-
-        loader.add_value('user_rating', user_rating)
-        return loader.load_item()
 
     @staticmethod
     def format_review_url(user_id_and_name, page):
-        return f"https://www.goodreads.com/review/list/{user_id_and_name}?shelf=read&sort=rating&page={page}&per_page={ITEMS_PER_PAGE}"
-
-    @staticmethod
-    def extract_username_from_url(url):
-        username = re.findall(USER_ID_NAME_EXTRACTOR, url)
-        return username[0] if username else None
+        return f"https://www.goodreads.com/review/list_rss/{user_id_and_name}?shelf=read&order=d&sort=rating&per_page={ITEMS_PER_PAGE}&page={page}"

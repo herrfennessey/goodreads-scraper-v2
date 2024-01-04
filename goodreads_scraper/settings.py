@@ -17,7 +17,7 @@ NEWSPIDER_MODULE = "goodreads_scraper.spiders"
 USER_AGENT = 'Scrapy 2.8.0 (+https://github.com/herrfennessey/goodreads-scraper-v2)'
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
