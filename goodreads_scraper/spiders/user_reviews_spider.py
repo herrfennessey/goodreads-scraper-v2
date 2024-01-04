@@ -41,10 +41,15 @@ class UserReviewsSpider(scrapy.Spider):
         user_id = response.meta.get("user_id")
         for post in response.xpath('//channel/item'):
             loader = UserReviewLoader(UserReviewItem(), post)
+
+            user_rating = post.xpath('user_rating/text()').get()
+            if user_rating and int(user_rating) == 0:
+                continue
+
+            loader.add_value('user_rating', user_rating)
             loader.add_value('user_id', user_id)
             loader.add_xpath('book_id', 'book_id/text()')
             loader.add_value('scrape_time', round(time.time() * 1000))
-            loader.add_xpath('user_rating', 'user_rating/text()')
 
             user_read_at = post.xpath('user_read_at/text()').get()
             if user_read_at:
