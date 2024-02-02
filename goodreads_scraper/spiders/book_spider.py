@@ -72,6 +72,7 @@ class BookSpider(scrapy.Spider):
         loader.add_value('book_id', book.get("legacyId"))
         loader.add_value('book_url', book.get("webUrl"))
         loader.add_value('book_title', book.get("title"))
+        loader.add_value('image_url', book.get("imageUrl"))
         loader.add_value('author', contributor.get("name"))
         loader.add_value('author_url', contributor.get("webUrl"))
         loader.add_value('book_description', book.get('description({"stripped":true})'))

@@ -58,6 +58,7 @@ class BookItem(scrapy.Item):
     book_id = Field(serializer=int)
     book_url = Field()
     book_title = Field(input_processor=MapCompose(str.strip))
+    image_url = Field(input_processor=MapCompose(str.strip))
     author = Field(input_processor=MapCompose(str.strip))
     author_url = Field(input_processor=MapCompose(str.strip))
     book_description = Field()
